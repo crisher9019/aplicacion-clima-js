@@ -12,12 +12,27 @@ if(ciudad){
 }    
 })
 
-function fetchDatosClima(ciudad){
-   fetch(`${urlBase}?q=${ciudad}&appid=${apiKey}`)
-.then(response => response.json())
-.then(response =>mostrarDatosClima(response))
+function fetchDatosClima(ciudad) {
+  fetch(`${urlBase}?q=${ciudad}&appid=${apiKey}`)
+    .then(response => response.json())
+    .then(response => {
+      if (response.cod === 200) {
+        mostrarDatosClima(response)
+      } else {
+        mostrarError(`Ciudad "${ciudad}" inexistente.`)
+      }
+    })
 }
+function mostrarError(mensaje) {
+  const divDatosClima = document.getElementById('datosClima')
+  divDatosClima.innerHTML = ''
 
+  const errorParrafo = document.createElement('p')
+  errorParrafo.textContent = mensaje
+  errorParrafo.style.color = 'red'
+
+  divDatosClima.appendChild(errorParrafo)
+}
 function mostrarDatosClima(response){
     const divDatosClima = document.getElementById('datosClima')
     divDatosClima.innerHTML=''
