@@ -1,62 +1,95 @@
-let apiKey = 'e00cfc90c8ea59bfdec9109aaddc6bc3'
-let difKevin = 273.15
-let urlBase = 'https://api.openweathermap.org/data/2.5/weather'
+// @ts-check
+let apiKey = 'e00cfc90c8ea59bfdec9109aaddc6bc3';
+let difKevin = 273.15;
+let baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
 
+/** @ts-expect-error @type {HTMLDivElement} */
+const weatherDiv = document.getElementById('weatherDiv');
+/** @ts-expect-error @type {HTMLButtonElement} */
+const searchButton = document.getElementById('searchButton');
+/** @ts-expect-error @type {HTMLInputElement} */
+const cityInput = document.getElementById('cityInput');
 
-
-
-document.getElementById('botonBusqueda').addEventListener('click', () => {
-    const ciudad = document.getElementById('ciudadEntrada').value
-if(ciudad){
-    fetchDatosClima(ciudad)
-}    
-})
-
-function fetchDatosClima(ciudad) {
-  fetch(`${urlBase}?q=${ciudad}&appid=${apiKey}`)
-    .then(response => response.json())
-    .then(response => {
-      if (response.cod === 200) {
-        mostrarDatosClima(response)
-      } else {
-        mostrarError(`Ciudad "${ciudad}" inexistente.`)
-      }
-    })
+if (searchButton) {
+  /** Set up a click listener to fetch the weather */
+  searchButton.addEventListener('click', onClick);
 }
-function mostrarError(mensaje) {
-  const divDatosClima = document.getElementById('datosClima')
-  divDatosClima.innerHTML = ''
 
-  const errorParrafo = document.createElement('p')
-  errorParrafo.textContent = mensaje
-  errorParrafo.style.color = 'red'
+/**
+ * Handle click event and fetch data.
+ *
+ * @param {MouseEvent} event
+ */
+async function onClick(event) {
+  // Do not navigate away
+  event.preventDefault();
 
-  divDatosClima.appendChild(errorParrafo)
+  // Make sure the elements were found and exist
+  if (!cityInput || !weatherDiv) return;
+
+  const city = cityInput.value;
+
+  // Always prefer early returns
+  if (!city) {
+    setTitle('Please provide a city');
+
+    return;
+  }
+
+  const weather = await fetchWeather(city);
+
+  if (!weather) {
+    setTitle('City not found');
+
+    return;
+  }
+
+  parseWeather(weather);
 }
-function mostrarDatosClima(response){
-    const divDatosClima = document.getElementById('datosClima')
-    divDatosClima.innerHTML=''
 
-    const ciudadNombre = response.name
-    const temperatura = response.main.temp
-    const descripcion = response.weather[0].description
-    const icono = response.weather[0].icon
+/** Call the weather API to get the city's current weather */
+async function fetchWeather(city) {
+  const response = await fetch(`${baseUrl}?q=${city}&appid=${apiKey}`);
+  const weather = await response.json();
 
-    const temperaturainfo = document.createElement('p')
-    temperaturainfo.textContent = `La temperatura es : ${Math.floor(temperatura-difKevin)}°C`
+  if (weather.cod === '404') return null;
 
-     const ciudadTitulo = document.createElement('h2')
-    ciudadTitulo.textContent = ciudadNombre 
+  return weather;
+}
 
-    const iconoInfo = document.createElement('img')
-    iconoInfo.src =`https://openweathermap.org/img/wn/${icono}@2x.png`
+/** Append the weather data to the HTML div */
+function parseWeather(weather) {
+  // Set the title as the city name
+  setTitle(weather.name);
 
-    const descripcionTitulo = document.createElement('p')
-    descripcionTitulo.textContent = `La descripcion meteorologica es : ${descripcion}`
+  // Describe the temperature
+  const temperatureElement = document.createElement('p');
+  const calculatedTemperature = Math.floor(weather.main.temp - difKevin);
+  temperatureElement.textContent = `Current temperature is :${calculatedTemperature}°C`;
 
-    divDatosClima.appendChild(ciudadTitulo)
-    divDatosClima.appendChild(temperaturainfo)
-    divDatosClima.appendChild(iconoInfo)
-    divDatosClima.appendChild(descripcionTitulo)
+  // Set the weather icon
+  const iconElement = document.createElement('img');
+  iconElement.src = `https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`;
 
+  // Describe the weather
+  const descriptionElement = document.createElement('p');
+  descriptionElement.textContent = weather.weather[0].description;
+
+  // Append the elements to the weather div
+  weatherDiv.appendChild(temperatureElement);
+  weatherDiv.appendChild(iconElement);
+  weatherDiv.appendChild(descriptionElement);
+}
+
+/** Clear the weather div and add a title to it */
+function setTitle(message) {
+  // Clear the div
+  weatherDiv.innerHTML = '';
+
+  // Create a new title element
+  const titleElement = document.createElement('h2');
+  // Set the title contents
+  titleElement.textContent = message;
+  // Append the new element to the div
+  weatherDiv.appendChild(titleElement);
 }
